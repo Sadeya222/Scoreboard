@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Single live scoreboard document. Anyone can read (display boards),
+    // writes are validated against the expected schema.
+    match /scoreboards/main {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly([
+          'homeName', 'awayName', 'homeScore', 'awayScore', 'period',
+          'clockRemainingMs', 'clockRunning', 'clockStartedAt',
+          'periodLengthMs', 'updatedAt'
+        ])
+        && request.resource.data.homeName is string
+        && request.resource.data.homeName.size() <= 24
+        && request.resource.data.awayName is string
+        && request.resource.data.awayName.size() <= 24
+        && request.resource.data.homeScore is int
+        && request.resource.data.homeScore >= 0
+        && request.resource.data.awayScore is int
+        && request.resource.data.awayScore >= 0
+        && request.resource.data.period in ['1', '2', '3', 'OT', 'SO']
+        && request.resource.data.clockRemainingMs is number
+        && request.resource.data.clockRunning is bool
+        && request.resource.data.clockStartedAt is number
+        && request.resource.data.periodLengthMs is number
+        && request.resource.data.updatedAt is number;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
